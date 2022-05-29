@@ -7,10 +7,10 @@
 
 import SQLite3
 
-let SQLITE_STATIC = unsafeBitCast(0, to: sqlite3_destructor_type.self)
-let SQLITE_TRANSIENT = unsafeBitCast(-1, to: sqlite3_destructor_type.self)
+public let SQLITE_STATIC = unsafeBitCast(0, to: sqlite3_destructor_type.self)
+public let SQLITE_TRANSIENT = unsafeBitCast(-1, to: sqlite3_destructor_type.self)
 
-func sqlite3Open(_ filename: String) throws -> OpaquePointer {
+public func sqlite3Open(_ filename: String) throws -> OpaquePointer {
     var databaseConnection: OpaquePointer!
     let resultCode = sqlite3_open(filename, &databaseConnection)
     if resultCode != SQLITE_OK {
@@ -21,7 +21,7 @@ func sqlite3Open(_ filename: String) throws -> OpaquePointer {
     return databaseConnection
 }
 
-func sqlite3PrepareV2(_ databaseConnection: OpaquePointer, _ statement: String) throws -> OpaquePointer {
+public func sqlite3PrepareV2(_ databaseConnection: OpaquePointer, _ statement: String) throws -> OpaquePointer {
     let utf8Statement = (statement as NSString).utf8String
     var preparedStatement: OpaquePointer!
     let resultCode = sqlite3_prepare_v2(databaseConnection, utf8Statement, -1, &preparedStatement, nil)
@@ -33,7 +33,7 @@ func sqlite3PrepareV2(_ databaseConnection: OpaquePointer, _ statement: String) 
     return preparedStatement
 }
 
-func sqlite3StepDone(_ preparedStatement: OpaquePointer) throws {
+public func sqlite3StepDone(_ preparedStatement: OpaquePointer) throws {
     let resultCode = sqlite3_step(preparedStatement)
     if resultCode != SQLITE_DONE {
         let errorCode = resultCode
@@ -42,7 +42,7 @@ func sqlite3StepDone(_ preparedStatement: OpaquePointer) throws {
     }
 }
 
-func sqlite3StepRow(_ preparedStatement: OpaquePointer) throws -> Bool {
+public func sqlite3StepRow(_ preparedStatement: OpaquePointer) throws -> Bool {
     let resultCode = sqlite3_step(preparedStatement)
     if resultCode == SQLITE_ROW {
         return true
@@ -55,7 +55,7 @@ func sqlite3StepRow(_ preparedStatement: OpaquePointer) throws -> Bool {
     }
 }
 
-func sqlite3Finalize(_ preparedStatement: OpaquePointer) throws {
+public func sqlite3Finalize(_ preparedStatement: OpaquePointer) throws {
     let resultCode = sqlite3_finalize(preparedStatement)
     if resultCode != SQLITE_OK {
         let errorCode = resultCode
@@ -66,7 +66,7 @@ func sqlite3Finalize(_ preparedStatement: OpaquePointer) throws {
 
 // MARK: - Bind
 
-func sqlite3BindTextNull(_ preparedStatement: OpaquePointer, _ parameterIndex: Int32, _ parameterValue: String?) throws {
+public func sqlite3BindTextNull(_ preparedStatement: OpaquePointer, _ parameterIndex: Int32, _ parameterValue: String?) throws {
     if let parameterValue = parameterValue {
         let utf8String = (parameterValue as NSString).utf8String
         let resultCode = sqlite3_bind_text(preparedStatement, parameterIndex, utf8String, -1, SQLITE_TRANSIENT)
@@ -85,7 +85,7 @@ func sqlite3BindTextNull(_ preparedStatement: OpaquePointer, _ parameterIndex: I
     }
 }
 
-func sqlite3BindText(_ preparedStatement: OpaquePointer, _ parameterIndex: Int32, _ parameterValue: String) throws {
+public func sqlite3BindText(_ preparedStatement: OpaquePointer, _ parameterIndex: Int32, _ parameterValue: String) throws {
     let utf8String = (parameterValue as NSString).utf8String
     let resultCode = sqlite3_bind_text(preparedStatement, parameterIndex, utf8String, -1, SQLITE_TRANSIENT)
     if resultCode != SQLITE_OK {
@@ -95,7 +95,7 @@ func sqlite3BindText(_ preparedStatement: OpaquePointer, _ parameterIndex: Int32
     }
 }
 
-func sqlite3BindInt64(_ preparedStatement: OpaquePointer, _ parameterIndex: Int32, _ parameterValue: Int64) throws {
+public func sqlite3BindInt64(_ preparedStatement: OpaquePointer, _ parameterIndex: Int32, _ parameterValue: Int64) throws {
     let resultCode = sqlite3_bind_int64(preparedStatement, parameterIndex, parameterValue)
     if resultCode != SQLITE_OK {
         let errorCode = resultCode
@@ -106,7 +106,7 @@ func sqlite3BindInt64(_ preparedStatement: OpaquePointer, _ parameterIndex: Int3
 
 // MARK: - Column
 
-func sqlite3ColumnText(_ preparedStatement: OpaquePointer, _ columnIndex: Int32) throws -> String {
+public func sqlite3ColumnText(_ preparedStatement: OpaquePointer, _ columnIndex: Int32) throws -> String {
     let columnType = sqlite3_column_type(preparedStatement, columnIndex)
     if columnType == SQLITE_TEXT {
         if let value = sqlite3_column_text(preparedStatement, columnIndex) {
@@ -120,7 +120,7 @@ func sqlite3ColumnText(_ preparedStatement: OpaquePointer, _ columnIndex: Int32)
     }
 }
 
-func sqlite3ColumnTextNull(_ preparedStatement: OpaquePointer, _ columnIndex: Int32) throws -> String? {
+public func sqlite3ColumnTextNull(_ preparedStatement: OpaquePointer, _ columnIndex: Int32) throws -> String? {
     let columnType = sqlite3_column_type(preparedStatement, columnIndex)
     if columnType == SQLITE_TEXT {
         if let value = sqlite3_column_text(preparedStatement, columnIndex) {
@@ -136,7 +136,7 @@ func sqlite3ColumnTextNull(_ preparedStatement: OpaquePointer, _ columnIndex: In
     }
 }
 
-func sqlite3ColumnInt64(_ preparedStatement: OpaquePointer, _ columnIndex: Int32) throws -> Int64 {
+public func sqlite3ColumnInt64(_ preparedStatement: OpaquePointer, _ columnIndex: Int32) throws -> Int64 {
     let columnType = sqlite3_column_type(preparedStatement, columnIndex)
     if columnType == SQLITE_INTEGER {
         let value = sqlite3_column_int64(preparedStatement, columnIndex)
@@ -146,7 +146,7 @@ func sqlite3ColumnInt64(_ preparedStatement: OpaquePointer, _ columnIndex: Int32
     }
 }
 
-func sqlite3ColumnInt64Null(_ preparedStatement: OpaquePointer, _ columnIndex: Int32) throws -> Int64? {
+public func sqlite3ColumnInt64Null(_ preparedStatement: OpaquePointer, _ columnIndex: Int32) throws -> Int64? {
     let columnType = sqlite3_column_type(preparedStatement, columnIndex)
     if columnType == SQLITE_INTEGER {
         let value = sqlite3_column_int64(preparedStatement, columnIndex)
