@@ -5,6 +5,7 @@
 //  Created by Ihor Myroniuk on 21.05.2022.
 //
 
+import Foundation
 import SQLite3
 
 public let SQLITE_STATIC = unsafeBitCast(0, to: sqlite3_destructor_type.self)
