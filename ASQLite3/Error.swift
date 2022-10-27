@@ -1,10 +1,3 @@
-//
-//  Error.swift
-//  ASQLite3
-//
-//  Created by Ihor Myroniuk on 21.05.2022.
-//
-
 import Foundation
 
 struct Error: Swift.Error, CustomDebugStringConvertible {

@@ -1,10 +1,3 @@
-//
-//  SQLite3Helpers.swift
-//  ASQLite3
-//
-//  Created by Ihor Myroniuk on 21.05.2022.
-//
-
 import Foundation
 import SQLite3
 
