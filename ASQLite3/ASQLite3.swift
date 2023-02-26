@@ -98,6 +98,15 @@ public func sqlite3BindInt64(_ preparedStatement: OpaquePointer, _ parameterInde
     }
 }
 
+public func sqlite3BindDouble(_ preparedStatement: OpaquePointer, _ parameterIndex: Int32, _ parameterValue: Double) throws {
+    let resultCode = sqlite3_bind_double(preparedStatement, parameterIndex, parameterValue)
+    if resultCode != SQLITE_OK {
+        let errorCode = resultCode
+        let errorMessage = String(cString: sqlite3_errstr(resultCode))
+        throw Error("SQLite3 failure: \(errorCode) \(errorMessage)")
+    }
+}
+
 // MARK: - Column
 
 public func sqlite3ColumnText(_ preparedStatement: OpaquePointer, _ columnIndex: Int32) throws -> String {
@@ -144,6 +153,28 @@ public func sqlite3ColumnInt64Null(_ preparedStatement: OpaquePointer, _ columnI
     let columnType = sqlite3_column_type(preparedStatement, columnIndex)
     if columnType == SQLITE_INTEGER {
         let value = sqlite3_column_int64(preparedStatement, columnIndex)
+        return value
+    } else if columnType == SQLITE_NULL {
+        return nil
+    } else {
+        throw Error("Unexpected column type \(String(reflecting: columnType))")
+    }
+}
+
+public func sqlite3ColumnDouble(_ preparedStatement: OpaquePointer, _ columnIndex: Int32) throws -> Double {
+    let columnType = sqlite3_column_type(preparedStatement, columnIndex)
+    if columnType == SQLITE_FLOAT {
+        let value = sqlite3_column_double(preparedStatement, columnIndex)
+        return value
+    } else {
+        throw Error("Unexpected column type \(String(reflecting: columnType))")
+    }
+}
+
+public func sqlite3ColumnDoubleNull(_ preparedStatement: OpaquePointer, _ columnIndex: Int32) throws -> Double? {
+    let columnType = sqlite3_column_type(preparedStatement, columnIndex)
+    if columnType == SQLITE_FLOAT {
+        let value = sqlite3_column_double(preparedStatement, columnIndex)
         return value
     } else if columnType == SQLITE_NULL {
         return nil
