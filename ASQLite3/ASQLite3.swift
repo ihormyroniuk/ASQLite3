@@ -107,6 +107,17 @@ public func sqlite3BindDouble(_ preparedStatement: OpaquePointer, _ parameterInd
     }
 }
 
+public func sqlite3BindBlob(_ preparedStatement: OpaquePointer, _ parameterIndex: Int32, _ parameterValue: Data) throws {
+    let resultCode = parameterValue.withUnsafeBytes({ bufferPointer -> Int32 in
+        return sqlite3_bind_blob(preparedStatement, parameterIndex, bufferPointer.baseAddress, Int32(parameterValue.count), SQLITE_TRANSIENT)
+    })
+    if resultCode != SQLITE_OK {
+        let errorCode = resultCode
+        let errorMessage = String(cString: sqlite3_errstr(resultCode))
+        throw Error("SQLite3 failure: \(errorCode) \(errorMessage)")
+    }
+}
+
 // MARK: - Column
 
 public func sqlite3ColumnText(_ preparedStatement: OpaquePointer, _ columnIndex: Int32) throws -> String {
@@ -176,6 +187,42 @@ public func sqlite3ColumnDoubleNull(_ preparedStatement: OpaquePointer, _ column
     if columnType == SQLITE_FLOAT {
         let value = sqlite3_column_double(preparedStatement, columnIndex)
         return value
+    } else if columnType == SQLITE_NULL {
+        return nil
+    } else {
+        throw Error("Unexpected column type \(String(reflecting: columnType))")
+    }
+}
+
+public func sqlite3ColumnBlob(_ preparedStatement: OpaquePointer, _ columnIndex: Int32) throws -> Data {
+    let columnType = sqlite3_column_type(preparedStatement, columnIndex)
+    if columnType == SQLITE_BLOB {
+        let bytesCount = sqlite3_column_bytes(preparedStatement, columnIndex)
+        guard bytesCount > 0 else {
+            throw Error("Data is empty for \(String(reflecting: columnType))")
+        }
+        guard let blob = sqlite3_column_blob(preparedStatement, columnIndex) else {
+            throw Error("Unable to load blob for \(String(reflecting: columnType))")
+        }
+        let data = Data(bytes: blob, count: Int(bytesCount))
+        return data
+    } else {
+        throw Error("Unexpected column type \(String(reflecting: columnType))")
+    }
+}
+
+public func sqlite3ColumnBlobNull(_ preparedStatement: OpaquePointer, _ columnIndex: Int32) throws -> Data? {
+    let columnType = sqlite3_column_type(preparedStatement, columnIndex)
+    if columnType == SQLITE_BLOB {
+        let bytesCount = sqlite3_column_bytes(preparedStatement, columnIndex)
+        guard bytesCount > 0 else {
+            return nil
+        }
+        guard let blob = sqlite3_column_blob(preparedStatement, columnIndex) else {
+            return nil
+        }
+        let data = Data(bytes: blob, count: Int(bytesCount))
+        return data
     } else if columnType == SQLITE_NULL {
         return nil
     } else {
