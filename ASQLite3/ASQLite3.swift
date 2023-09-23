@@ -26,6 +26,24 @@ public func sqlite3OpenV2(_ filename: String, flags: Int32, zVfs: String?) throw
     return databaseConnection
 }
 
+public func sqlite3Close(_ databaseConnection: OpaquePointer) throws {
+    let resultCode = sqlite3_close(databaseConnection)
+    if resultCode != SQLITE_OK {
+        let errorCode = resultCode
+        let errorMessage = String(cString: sqlite3_errstr(resultCode))
+        throw Error("SQLite3 failure: \(errorCode) \(errorMessage)")
+    }
+}
+
+public func sqlite3CloseV2(_ databaseConnection: OpaquePointer) throws {
+    let resultCode = sqlite3_close(databaseConnection)
+    if resultCode != SQLITE_OK {
+        let errorCode = resultCode
+        let errorMessage = String(cString: sqlite3_errstr(resultCode))
+        throw Error("SQLite3 failure: \(errorCode) \(errorMessage)")
+    }
+}
+
 public func sqlite3PrepareV2(_ databaseConnection: OpaquePointer, _ statement: String) throws -> OpaquePointer {
     let utf8Statement = (statement as NSString).utf8String
     var preparedStatement: OpaquePointer!
