@@ -157,6 +157,26 @@ public struct BoundParameter {
         case blob(Data)
     }
     let value: Value
+    public init(index: Int32, value: String?) {
+        self.index = index
+        self.value = .textNull(value)
+    }
+    public init(index: Int32, value: String) {
+        self.index = index
+        self.value = .text(value)
+    }
+    public init(index: Int32, value: Int64) {
+        self.index = index
+        self.value = .int64(value)
+    }
+    public init(index: Int32, value: Double) {
+        self.index = index
+        self.value = .double(value)
+    }
+    public init(index: Int32, value: Data) {
+        self.index = index
+        self.value = .blob(value)
+    }
 }
 public func sqlite3Bind(_ preparedStatement: OpaquePointer, _ parameter: BoundParameter) throws {
     let index = parameter.index
