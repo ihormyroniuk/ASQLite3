@@ -89,17 +89,17 @@ public func sqlite3Finalize(_ preparedStatement: OpaquePointer) throws {
 
 // MARK: - Bind
 
-public func sqlite3BindTextNull(_ preparedStatement: OpaquePointer, _ parameterIndex: Int32, _ parameterValue: String?) throws {
-    if let parameterValue = parameterValue {
-        let utf8String = (parameterValue as NSString).utf8String
-        let resultCode = sqlite3_bind_text(preparedStatement, parameterIndex, utf8String, -1, SQLITE_TRANSIENT)
+public func sqlite3BindTextNull(_ preparedStatement: OpaquePointer, _ index: Int32, _ value: String?) throws {
+    if let value = value {
+        let utf8String = (value as NSString).utf8String
+        let resultCode = sqlite3_bind_text(preparedStatement, index, utf8String, -1, SQLITE_TRANSIENT)
         if resultCode != SQLITE_OK {
             let errorCode = resultCode
             let errorMessage = String(cString: sqlite3_errstr(resultCode))
             throw Error("SQLite3 failure: \(errorCode) \(errorMessage)")
         }
     } else {
-        let resultCode = sqlite3_bind_null(preparedStatement, parameterIndex)
+        let resultCode = sqlite3_bind_null(preparedStatement, index)
         if resultCode != SQLITE_OK {
             let errorCode = resultCode
             let errorMessage = String(cString: sqlite3_errstr(resultCode))
@@ -108,9 +108,9 @@ public func sqlite3BindTextNull(_ preparedStatement: OpaquePointer, _ parameterI
     }
 }
 
-public func sqlite3BindText(_ preparedStatement: OpaquePointer, _ parameterIndex: Int32, _ parameterValue: String) throws {
-    let utf8String = (parameterValue as NSString).utf8String
-    let resultCode = sqlite3_bind_text(preparedStatement, parameterIndex, utf8String, -1, SQLITE_TRANSIENT)
+public func sqlite3BindText(_ preparedStatement: OpaquePointer, _ index: Int32, _ value: String) throws {
+    let utf8String = (value as NSString).utf8String
+    let resultCode = sqlite3_bind_text(preparedStatement, index, utf8String, -1, SQLITE_TRANSIENT)
     if resultCode != SQLITE_OK {
         let errorCode = resultCode
         let errorMessage = String(cString: sqlite3_errstr(resultCode))
@@ -118,8 +118,8 @@ public func sqlite3BindText(_ preparedStatement: OpaquePointer, _ parameterIndex
     }
 }
 
-public func sqlite3BindInt64(_ preparedStatement: OpaquePointer, _ parameterIndex: Int32, _ parameterValue: Int64) throws {
-    let resultCode = sqlite3_bind_int64(preparedStatement, parameterIndex, parameterValue)
+public func sqlite3BindInt64(_ preparedStatement: OpaquePointer, _ index: Int32, _ value: Int64) throws {
+    let resultCode = sqlite3_bind_int64(preparedStatement, index, value)
     if resultCode != SQLITE_OK {
         let errorCode = resultCode
         let errorMessage = String(cString: sqlite3_errstr(resultCode))
@@ -127,8 +127,8 @@ public func sqlite3BindInt64(_ preparedStatement: OpaquePointer, _ parameterInde
     }
 }
 
-public func sqlite3BindDouble(_ preparedStatement: OpaquePointer, _ parameterIndex: Int32, _ parameterValue: Double) throws {
-    let resultCode = sqlite3_bind_double(preparedStatement, parameterIndex, parameterValue)
+public func sqlite3BindDouble(_ preparedStatement: OpaquePointer, _ index: Int32, _ value: Double) throws {
+    let resultCode = sqlite3_bind_double(preparedStatement, index, value)
     if resultCode != SQLITE_OK {
         let errorCode = resultCode
         let errorMessage = String(cString: sqlite3_errstr(resultCode))
@@ -136,14 +136,47 @@ public func sqlite3BindDouble(_ preparedStatement: OpaquePointer, _ parameterInd
     }
 }
 
-public func sqlite3BindBlob(_ preparedStatement: OpaquePointer, _ parameterIndex: Int32, _ parameterValue: Data) throws {
-    let resultCode = parameterValue.withUnsafeBytes({ bufferPointer -> Int32 in
-        return sqlite3_bind_blob(preparedStatement, parameterIndex, bufferPointer.baseAddress, Int32(parameterValue.count), SQLITE_TRANSIENT)
+public func sqlite3BindBlob(_ preparedStatement: OpaquePointer, _ index: Int32, _ value: Data) throws {
+    let resultCode = value.withUnsafeBytes({ bufferPointer -> Int32 in
+        return sqlite3_bind_blob(preparedStatement, index, bufferPointer.baseAddress, Int32(value.count), SQLITE_TRANSIENT)
     })
     if resultCode != SQLITE_OK {
         let errorCode = resultCode
         let errorMessage = String(cString: sqlite3_errstr(resultCode))
         throw Error("SQLite3 failure: \(errorCode) \(errorMessage)")
+    }
+}
+
+public struct BoundParameter {
+    let index: Int32
+    enum Value {
+        case textNull(String?)
+        case text(String)
+        case int64(Int64)
+        case double(Double)
+        case blob(Data)
+    }
+    let value: Value
+}
+public func sqlite3Bind(_ preparedStatement: OpaquePointer, _ parameter: BoundParameter) throws {
+    let index = parameter.index
+    let value = parameter.value
+    switch value {
+    case .textNull(let value):
+        try sqlite3BindTextNull(preparedStatement, index, value)
+    case .text(let value):
+        try sqlite3BindText(preparedStatement, index, value)
+    case .int64(let value):
+        try sqlite3BindInt64(preparedStatement, index, value)
+    case .double(let value):
+        try sqlite3BindDouble(preparedStatement, index, value)
+    case .blob(let value):
+        try sqlite3BindBlob(preparedStatement, index, value)
+    }
+}
+public func sqlite3Bind(_ preparedStatement: OpaquePointer, _ parameters: [BoundParameter]) throws {
+    for parameter in parameters {
+        try sqlite3Bind(preparedStatement, parameter)
     }
 }
 
