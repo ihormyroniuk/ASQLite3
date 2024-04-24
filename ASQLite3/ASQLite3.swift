@@ -146,6 +146,7 @@ public func sqlite3BindBlob(_ preparedStatement: OpaquePointer, _ index: Int32, 
         throw Error("SQLite3 failure: \(errorCode) \(errorMessage)")
     }
 }
+
 public enum BoundValue {
     case textNull(String?)
     case text(String)
@@ -153,6 +154,25 @@ public enum BoundValue {
     case double(Double)
     case blob(Data)
 }
+
+public func sqlite3Bind(_ preparedStatement: OpaquePointer, _ values: [BoundValue]) throws {
+    for (index, value) in values.enumerated() {
+        let index = Int32(index + 1)
+        switch value {
+        case .textNull(let value):
+            try sqlite3BindTextNull(preparedStatement, index, value)
+        case .text(let value):
+            try sqlite3BindText(preparedStatement, index, value)
+        case .int64(let value):
+            try sqlite3BindInt64(preparedStatement, index, value)
+        case .double(let value):
+            try sqlite3BindDouble(preparedStatement, index, value)
+        case .blob(let value):
+            try sqlite3BindBlob(preparedStatement, index, value)
+        }
+    }
+}
+
 public struct BoundParameter {
     let index: Int32
     let value: BoundValue
@@ -196,23 +216,6 @@ public func sqlite3Bind(_ preparedStatement: OpaquePointer, _ parameter: BoundPa
 public func sqlite3Bind(_ preparedStatement: OpaquePointer, _ parameters: [BoundParameter]) throws {
     for parameter in parameters {
         try sqlite3Bind(preparedStatement, parameter)
-    }
-}
-public func sqlite3Bind(_ preparedStatement: OpaquePointer, _ values: [BoundValue]) throws {
-    for (index, value) in values.enumerated() {
-        let index = Int32(index + 1)
-        switch value {
-        case .textNull(let value):
-            try sqlite3BindTextNull(preparedStatement, index, value)
-        case .text(let value):
-            try sqlite3BindText(preparedStatement, index, value)
-        case .int64(let value):
-            try sqlite3BindInt64(preparedStatement, index, value)
-        case .double(let value):
-            try sqlite3BindDouble(preparedStatement, index, value)
-        case .blob(let value):
-            try sqlite3BindBlob(preparedStatement, index, value)
-        }
     }
 }
 
