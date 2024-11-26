@@ -118,6 +118,24 @@ public func sqlite3BindText(_ preparedStatement: OpaquePointer, _ index: Int32, 
     }
 }
 
+public func sqlite3BindInt64Null(_ preparedStatement: OpaquePointer, _ index: Int32, _ value: Int64?) throws {
+    if let value = value {
+        let resultCode = sqlite3_bind_int64(preparedStatement, index, value)
+        if resultCode != SQLITE_OK {
+            let errorCode = resultCode
+            let errorMessage = String(cString: sqlite3_errstr(resultCode))
+            throw Error("SQLite3 failure: \(errorCode) \(errorMessage)")
+        }
+    } else {
+        let resultCode = sqlite3_bind_null(preparedStatement, index)
+        if resultCode != SQLITE_OK {
+            let errorCode = resultCode
+            let errorMessage = String(cString: sqlite3_errstr(resultCode))
+            throw Error("SQLite3 failure: \(errorCode) \(errorMessage)")
+        }
+    }
+}
+
 public func sqlite3BindInt64(_ preparedStatement: OpaquePointer, _ index: Int32, _ value: Int64) throws {
     let resultCode = sqlite3_bind_int64(preparedStatement, index, value)
     if resultCode != SQLITE_OK {
@@ -150,6 +168,7 @@ public func sqlite3BindBlob(_ preparedStatement: OpaquePointer, _ index: Int32, 
 public enum BoundValue {
     case textNull(String?)
     case text(String)
+    case int64Null(Int64?)
     case int64(Int64)
     case double(Double)
     case blob(Data)
@@ -163,6 +182,8 @@ public func sqlite3Bind(_ preparedStatement: OpaquePointer, _ values: [BoundValu
             try sqlite3BindTextNull(preparedStatement, index, value)
         case .text(let value):
             try sqlite3BindText(preparedStatement, index, value)
+        case .int64Null(let value):
+            try sqlite3BindInt64Null(preparedStatement, index, value)
         case .int64(let value):
             try sqlite3BindInt64(preparedStatement, index, value)
         case .double(let value):
@@ -183,6 +204,10 @@ public struct BoundParameter {
     public init(index: Int32, value: String) {
         self.index = index
         self.value = .text(value)
+    }
+    public init(index: Int32, value: Int64?) {
+        self.index = index
+        self.value = .int64Null(value)
     }
     public init(index: Int32, value: Int64) {
         self.index = index
@@ -205,6 +230,8 @@ public func sqlite3Bind(_ preparedStatement: OpaquePointer, _ parameter: BoundPa
         try sqlite3BindTextNull(preparedStatement, index, value)
     case .text(let value):
         try sqlite3BindText(preparedStatement, index, value)
+    case .int64Null(let value):
+        try sqlite3BindInt64Null(preparedStatement, index, value)
     case .int64(let value):
         try sqlite3BindInt64(preparedStatement, index, value)
     case .double(let value):
