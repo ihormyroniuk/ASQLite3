@@ -10,7 +10,7 @@ public func sqlite3Open(_ filename: String) throws -> OpaquePointer {
     if resultCode != SQLITE_OK {
         let errorCode = resultCode
         let errorMessage = String(cString: sqlite3_errstr(resultCode))
-        throw Error("SQLite3 failure: \(errorCode) \(errorMessage)")
+        throw Error("SQLite3 open failure: \(errorCode) \(errorMessage)")
     }
     return databaseConnection
 }
@@ -21,7 +21,7 @@ public func sqlite3OpenV2(_ filename: String, flags: Int32, zVfs: String?) throw
     if resultCode != SQLITE_OK {
         let errorCode = resultCode
         let errorMessage = String(cString: sqlite3_errstr(resultCode))
-        throw Error("SQLite3 failure: \(errorCode) \(errorMessage)")
+        throw Error("SQLite3 open v2 failure: \(errorCode) \(errorMessage)")
     }
     return databaseConnection
 }
@@ -31,7 +31,7 @@ public func sqlite3Close(_ databaseConnection: OpaquePointer) throws {
     if resultCode != SQLITE_OK {
         let errorCode = resultCode
         let errorMessage = String(cString: sqlite3_errstr(resultCode))
-        throw Error("SQLite3 failure: \(errorCode) \(errorMessage)")
+        throw Error("SQLite3 close failure: \(errorCode) \(errorMessage)")
     }
 }
 
@@ -40,7 +40,7 @@ public func sqlite3CloseV2(_ databaseConnection: OpaquePointer) throws {
     if resultCode != SQLITE_OK {
         let errorCode = resultCode
         let errorMessage = String(cString: sqlite3_errstr(resultCode))
-        throw Error("SQLite3 failure: \(errorCode) \(errorMessage)")
+        throw Error("SQLite3 close v2 failure: \(errorCode) \(errorMessage)")
     }
 }
 
@@ -51,7 +51,7 @@ public func sqlite3PrepareV2(_ databaseConnection: OpaquePointer, _ statement: S
     if resultCode != SQLITE_OK {
         let errorCode = resultCode
         let errorMessage = String(cString: sqlite3_errstr(resultCode))
-        throw Error("SQLite3 failure: \(errorCode) \(errorMessage)")
+        throw Error("SQLite3 prepare v2 failure: \(errorCode) \(errorMessage)")
     }
     return preparedStatement
 }
@@ -61,7 +61,7 @@ public func sqlite3StepDone(_ preparedStatement: OpaquePointer) throws {
     if resultCode != SQLITE_DONE {
         let errorCode = resultCode
         let errorMessage = String(cString: sqlite3_errstr(resultCode))
-        throw Error("SQLite3 failure: \(errorCode) \(errorMessage)")
+        throw Error("SQLite3 step done failure: \(errorCode) \(errorMessage)")
     }
 }
 
@@ -74,7 +74,7 @@ public func sqlite3StepRow(_ preparedStatement: OpaquePointer) throws -> Bool {
     } else {
         let errorCode = resultCode
         let errorMessage = String(cString: sqlite3_errstr(resultCode))
-        throw Error("SQLite3 failure: \(errorCode) \(errorMessage)")
+        throw Error("SQLite3 step row failure: \(errorCode) \(errorMessage)")
     }
 }
 
@@ -83,7 +83,17 @@ public func sqlite3Finalize(_ preparedStatement: OpaquePointer) throws {
     if resultCode != SQLITE_OK {
         let errorCode = resultCode
         let errorMessage = String(cString: sqlite3_errstr(resultCode))
-        throw Error("SQLite3 failure: \(errorCode) \(errorMessage)")
+        throw Error("SQLite3 finalize failure: \(errorCode) \(errorMessage)")
+    }
+}
+
+public func sqlite3Exec(databaseConnection: OpaquePointer, _ statement: String) throws {
+    let utf8Statement = (statement as NSString).utf8String
+    let resultCode = sqlite3_exec(databaseConnection, utf8Statement, nil, nil, nil)
+    if resultCode != SQLITE_OK {
+        let errorCode = resultCode
+        let errorMessage = String(cString: sqlite3_errstr(resultCode))
+        throw Error("SQLite3 exec failure: \(errorCode) \(errorMessage)")
     }
 }
 
@@ -115,6 +125,24 @@ public func sqlite3BindText(_ preparedStatement: OpaquePointer, _ index: Int32, 
         let errorCode = resultCode
         let errorMessage = String(cString: sqlite3_errstr(resultCode))
         throw Error("SQLite3 failure: \(errorCode) \(errorMessage)")
+    }
+}
+
+public func sqlite3BindInt64Null(_ preparedStatement: OpaquePointer, _ index: Int32, _ value: Int64?) throws {
+    if let value = value {
+        let resultCode = sqlite3_bind_int64(preparedStatement, index, value)
+        if resultCode != SQLITE_OK {
+            let errorCode = resultCode
+            let errorMessage = String(cString: sqlite3_errstr(resultCode))
+            throw Error("SQLite3 failure: \(errorCode) \(errorMessage)")
+        }
+    } else {
+        let resultCode = sqlite3_bind_null(preparedStatement, index)
+        if resultCode != SQLITE_OK {
+            let errorCode = resultCode
+            let errorMessage = String(cString: sqlite3_errstr(resultCode))
+            throw Error("SQLite3 failure: \(errorCode) \(errorMessage)")
+        }
     }
 }
 
@@ -150,6 +178,7 @@ public func sqlite3BindBlob(_ preparedStatement: OpaquePointer, _ index: Int32, 
 public enum BoundValue {
     case textNull(String?)
     case text(String)
+    case int64Null(Int64?)
     case int64(Int64)
     case double(Double)
     case blob(Data)
@@ -163,6 +192,8 @@ public func sqlite3Bind(_ preparedStatement: OpaquePointer, _ values: [BoundValu
             try sqlite3BindTextNull(preparedStatement, index, value)
         case .text(let value):
             try sqlite3BindText(preparedStatement, index, value)
+        case .int64Null(let value):
+            try sqlite3BindInt64Null(preparedStatement, index, value)
         case .int64(let value):
             try sqlite3BindInt64(preparedStatement, index, value)
         case .double(let value):
@@ -183,6 +214,10 @@ public struct BoundParameter {
     public init(index: Int32, value: String) {
         self.index = index
         self.value = .text(value)
+    }
+    public init(index: Int32, value: Int64?) {
+        self.index = index
+        self.value = .int64Null(value)
     }
     public init(index: Int32, value: Int64) {
         self.index = index
@@ -205,6 +240,8 @@ public func sqlite3Bind(_ preparedStatement: OpaquePointer, _ parameter: BoundPa
         try sqlite3BindTextNull(preparedStatement, index, value)
     case .text(let value):
         try sqlite3BindText(preparedStatement, index, value)
+    case .int64Null(let value):
+        try sqlite3BindInt64Null(preparedStatement, index, value)
     case .int64(let value):
         try sqlite3BindInt64(preparedStatement, index, value)
     case .double(let value):
