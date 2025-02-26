@@ -1,35 +1,43 @@
-//
-//  ASQLite3UnitTesting.swift
-//  ASQLite3UnitTesting
-//
-//  Created by Ihor Myroniuk on 29.05.2022.
-//
-
 import XCTest
+import SQLite3
+@testable import ASQLite3
 
 class ASQLite3UnitTesting: XCTestCase {
-
-    override func setUpWithError() throws {
-        // Put setup code here. This method is called before the invocation of each test method in the class.
-    }
-
-    override func tearDownWithError() throws {
-        // Put teardown code here. This method is called after the invocation of each test method in the class.
-    }
-
+    
     func testExample() throws {
-        // This is an example of a functional test case.
-        // Use XCTAssert and related functions to verify your tests produce the correct results.
-        // Any test you write for XCTest can be annotated as throws and async.
-        // Mark your test throws to produce an unexpected failure when your test encounters an uncaught error.
-        // Mark your test async to allow awaiting for asynchronous code to complete. Check the results with assertions afterwards.
+        let sqliteDatabaseUrl = try FileManager.default.url(for: .documentDirectory, in: .userDomainMask, appropriateFor: nil, create: false).appendingPathComponent("hhhhh.sqlite")
+        print("fdf \(sqliteDatabaseUrl)")
+        try FileManager.default.removeItem(at: sqliteDatabaseUrl)
+        let databaseConnection = try sqlite3Open(sqliteDatabaseUrl.path)
+        
+        let statementCreate =
+            """
+            CREATE TABLE
+            category(
+                id TEXT PRIMARY KEY,
+                name TEXT
+            );
+            """
+        let preparedStatementCreate = try sqlite3PrepareV2(databaseConnection, statementCreate)
+        try sqlite3StepDone(preparedStatementCreate)
+        try sqlite3Finalize(preparedStatementCreate)
+        
+        let statement =
+            """
+            INSERT INTO category(id, name)
+            VALUES (?, ?);
+            """
+        let preparedStatement = try sqlite3PrepareV2(databaseConnection, statement)
+        try sqlite3Bind(databaseConnection, [.text("2"), .text("name2")])
+        try sqlite3StepDone(preparedStatement)
+        try sqlite3Finalize(preparedStatement)
     }
 
-    func testPerformanceExample() throws {
-        // This is an example of a performance test case.
-        measure {
-            // Put the code you want to measure the time of here.
-        }
-    }
+//    func testPerformanceExample() throws {
+//        // This is an example of a performance test case.
+//        measure {
+//            // Put the code you want to measure the time of here.
+//        }
+//    }
 
 }

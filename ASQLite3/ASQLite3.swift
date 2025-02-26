@@ -330,3 +330,18 @@ public func sqlite3ColumnBlobNull(_ preparedStatement: OpaquePointer, _ columnIn
         throw Error("Unexpected column type \(String(reflecting: columnType))")
     }
 }
+
+public func sqlite3ExtendedResultCodes(_ databaseConnection: OpaquePointer, enable: Bool) throws {
+    let onoff: Int32
+    if enable {
+        onoff = 1
+    } else {
+        onoff = 0
+    }
+    let resultCode = sqlite3_extended_result_codes(databaseConnection, onoff)
+    if resultCode != SQLITE_OK {
+        let errorCode = resultCode
+        let errorMessage = String(cString: sqlite3_errstr(resultCode))
+        throw Error("SQLite3 failure: \(errorCode) \(errorMessage)")
+    }
+}

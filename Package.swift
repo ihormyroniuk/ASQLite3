@@ -26,6 +26,13 @@ let package = Package(
         .target(
             name: "ASQLite3",
             path: "ASQLite3"
-        )
+        ),
+        .testTarget(
+            name: "ASQLite3UnitTesting",
+            dependencies: [
+                "ASQLite3"
+            ],
+            path: "ASQLite3UnitTesting"
+        ),
     ]
 )
