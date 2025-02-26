@@ -89,8 +89,7 @@ public func sqlite3Finalize(_ preparedStatement: OpaquePointer) throws {
 
 public func sqlite3Exec(databaseConnection: OpaquePointer, _ statement: String) throws {
     let utf8Statement = (statement as NSString).utf8String
-    var errorMessage: UnsafeMutablePointer<Int8>? = nil
-    let resultCode = sqlite3_exec(databaseConnection, utf8Statement, nil, nil, &errorMessage)
+    let resultCode = sqlite3_exec(databaseConnection, utf8Statement, nil, nil, nil)
     if resultCode != SQLITE_OK {
         let errorCode = resultCode
         let errorMessage = String(cString: sqlite3_errstr(resultCode))
